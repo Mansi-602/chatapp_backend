@@ -98,6 +98,8 @@ process.on("uncaughtException", (err) => {
 
 const app = require("./app");
 
+const authRoutes = require("./routes/auth");
+
 const http = require("http");
 const server = http.createServer(app);
 
@@ -108,6 +110,8 @@ const FriendRequest = require("./models/friendRequest");
 const OneToOneMessage = require("./models/OneToOneMessage");
 const AudioCall = require("./models/audioCall");
 const VideoCall = require("./models/videoCall");
+
+app.use("/auth", authRoutes);
 
 // Add this
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
@@ -134,7 +138,7 @@ mongoose
     console.log("DB Connection successful");
   });
 
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 3000;
 
 server.listen(port, () => {
   console.log(`App running on port ${port} ...`);

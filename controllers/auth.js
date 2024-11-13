@@ -20,6 +20,7 @@ const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
 
 exports.register = catchAsync(async (req, res, next) => {
+  console.log("register controller reached");
   const { firstName, lastName, email, password } = req.body;
 
   const filteredBody = filterObj(
@@ -29,6 +30,7 @@ exports.register = catchAsync(async (req, res, next) => {
     "email",
     "password"
   );
+  console.log(filteredBody)
 
   // check if a verified user with given email exists
 
@@ -84,7 +86,7 @@ exports.sendOTP = catchAsync(async (req, res, next) => {
   // TODO send mail
   mailService.sendEmail({
     from: "30358csdsa@gmail.com",
-    to: user.email,
+    recipient: user.email,
     subject: "Verification OTP",
     html: otp(user.firstName, new_otp),
     attachments: [],
@@ -94,6 +96,8 @@ exports.sendOTP = catchAsync(async (req, res, next) => {
     status: "success",
     message: "OTP Sent Successfully!",
   });
+
+
 });
 
 exports.verifyOTP = catchAsync(async (req, res, next) => {
@@ -119,6 +123,8 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
   }
 
   if (!(await user.correctOTP(otp, user.otp))) {
+    console.log("Submitted OTP:", otp);
+    console.log("Stored Hashed OTP:", user.otp); 
     res.status(400).json({
       status: "error",
       message: "OTP is incorrect",
@@ -142,32 +148,27 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
     user_id: user._id,
   });
 });
-
-// User Login
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // console.log(email, password);
-
+  // Check if both email and password are provided
   if (!email || !password) {
-    res.status(400).json({
+    return res.status(400).json({
       status: "error",
       message: "Both email and password are required",
     });
-    return;
   }
 
+  // Find the user by email and include the password field
   const user = await User.findOne({ email: email }).select("+password");
 
+  // If user not found, return error
   if (!user || !user.password) {
-    res.status(400).json({
+    return res.status(400).json({
       status: "error",
       message: "Incorrect password",
     });
-
-    return;
   }
-
   if (!user || !(await user.correctPassword(password, user.password))) {
     res.status(400).json({
       status: "error",
@@ -177,9 +178,11 @@ exports.login = catchAsync(async (req, res, next) => {
     return;
   }
 
+  // If password is correct, generate a JWT token
   const token = signToken(user._id);
 
-  res.status(200).json({
+  // Return success response
+  return res.status(200).json({
     status: "success",
     message: "Logged in successfully!",
     token,
@@ -227,7 +230,6 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // GRANT ACCESS TO PROTECTED ROUTE
   req.user = this_user;
-  next();
 });
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
@@ -309,6 +311,3 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     token,
   });
 });
-
-
-
